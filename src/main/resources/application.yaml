@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/techshop-db
+    username: admin
+    password: 123456
+
+  jpa:
+    properties:
+      hibernate:
+        default_schema: order_service
+        show_sql: true
+        format_sql: true
+
+  kafka:
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      value-deserializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.trusted.packages: "*"
+
+logging:
+  level:
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: ERROR
+
+server:
+  port: 8084
+
+techshop:
+  services:
+    catalog:
+      url: "http://localhost:8082/"
+    order:
+      username: "order_service_user"
+      password: "123456"
+    user:
+      url: "http://localhost:8081/"
+    kafka:
+      url: "localhost:9092"
