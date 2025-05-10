@@ -12,6 +12,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -31,6 +33,10 @@ public class Order {
     @Column(name = "customer_user_id")
     private Long customerUserId;
 
+    @ManyToOne
+    @JoinColumn(name = "customer_delivery_info_id", nullable = false)
+    private CustomerDeliveryInfo customerDeliveryInfo;
+
     @Min(0)
     @Column(name = "payment_id")
     private Long paymentId;
@@ -44,7 +50,15 @@ public class Order {
     private BigDecimal totalPrice;
 
     @NotNull
+    @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus;
+
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderHistory> history;
 
     @NotNull
     private Provider provider;
@@ -66,5 +80,18 @@ public class Order {
         this.totalPrice = products.stream()
                 .map(OrderProduct::calculateTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public boolean isOrderPaid() {
+        return this.paymentStatus.equals(PaymentStatus.PAYMENT_COMPLETED);
+    }
+
+    public boolean isOrderStatusEquals(OrderStatus orderStatus) {
+        return this.orderStatus.equals(orderStatus);
+    }
+
+    public Map<Long, Integer> getProductsMap() {
+        return products.stream()
+                .collect(Collectors.toMap(OrderProduct::getProductId, OrderProduct::getQuantity));
     }
 }

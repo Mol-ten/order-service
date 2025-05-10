@@ -28,8 +28,8 @@ public class OrderHistory {
     private Order order;
 
     @NotNull
-    @Column(name = "order_status", nullable = false)
-    private OrderStatus orderStatus;
+    @Column(name = "order_history_step", nullable = false)
+    private OrderHistoryStep orderHistoryStep;
 
     @Column(name = "event_id")
     private UUID eventId;

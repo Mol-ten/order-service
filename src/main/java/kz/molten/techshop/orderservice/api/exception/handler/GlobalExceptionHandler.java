@@ -11,10 +11,34 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(OrderIllegalAccessException.class)
+    public ResponseEntity<String> handleOrderIllegalAccessException(OrderIllegalAccessException exception) {
+        log.error(exception.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(exception.getMessage());
+    }
+
+    @ExceptionHandler(IllegalPaymentStatusException.class)
+    public ResponseEntity<String> handleIllegalPaymentStatusException(IllegalPaymentStatusException exception) {
+        log.error(exception.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
+    }
+
+    @ExceptionHandler(IllegalOrderStatusException.class)
+    public ResponseEntity<String> handleIllegalOrderStatusException(IllegalOrderStatusException exception) {
+        log.error(exception.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
+    }
+
     @ExceptionHandler(InsufficientOrderProductQuantityException.class)
     public ResponseEntity<String> handleInsufficientOrderProductQuantityException(InsufficientOrderProductQuantityException exception) {
         log.error(exception.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
+    }
+
+    @ExceptionHandler(UserInsufficientRoleException.class)
+    public ResponseEntity<String> handleUserInsufficientRoleException(UserInsufficientRoleException exception) {
+        log.error(exception.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(exception.getMessage());
     }
 
     @ExceptionHandler(OrderHistoryNotFoundException.class)

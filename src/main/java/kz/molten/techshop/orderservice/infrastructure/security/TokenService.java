@@ -1,6 +1,6 @@
 package kz.molten.techshop.orderservice.infrastructure.security;
 
-import kz.molten.techshop.orderservice.api.dto.response.TokenResponse;
+import kz.molten.techshop.orderservice.infrastructure.kafka.dto.TokenResponse;
 import kz.molten.techshop.orderservice.infrastructure.external.UserServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

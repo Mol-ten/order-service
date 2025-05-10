@@ -1,17 +1,17 @@
 package kz.molten.techshop.orderservice.application.service;
 
 import kz.molten.techshop.orderservice.domain.event.OrderStatusChangedEvent;
-import kz.molten.techshop.orderservice.domain.model.ExecutedOrderHistory;
+import kz.molten.techshop.orderservice.domain.event.PaymentStatusChangedEvent;
+import kz.molten.techshop.orderservice.domain.model.*;
 import kz.molten.techshop.orderservice.api.dto.request.OrderHistoryDTO;
 import kz.molten.techshop.orderservice.application.mapper.OrderHistoryMapper;
-import kz.molten.techshop.orderservice.domain.model.Order;
-import kz.molten.techshop.orderservice.domain.model.OrderHistory;
 import kz.molten.techshop.orderservice.api.exception.OrderHistoryNotFoundException;
 import kz.molten.techshop.orderservice.api.exception.OrderNotFoundException;
 import kz.molten.techshop.orderservice.domain.repository.OrderHistoryRepository;
 import kz.molten.techshop.orderservice.domain.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +48,7 @@ public class OrderHistoryService {
 
     @Transactional
     public OrderHistory saveOrderHistory(OrderHistoryDTO dto) {
-        log.info("Saving orderHistory for order with id: {} and status: {}", dto.orderId(), dto.orderStatus());
+        log.info("Saving orderHistory for order with id: {} and status: {}", dto.orderId(), dto.orderHistoryStep());
 
         final Order order = orderRepository.findById(dto.orderId())
                 .orElseThrow(() -> new OrderNotFoundException(dto.orderId()));
@@ -56,13 +56,12 @@ public class OrderHistoryService {
         OrderHistory orderHistory = OrderHistoryMapper.fromDto(dto, order);
 
         orderHistoryRepository.saveAndFlush(orderHistory);
-        log.info("orderHistory for order with id: {} and status: {} was saved", dto.orderId(), dto.orderStatus());
+        log.info("orderHistory for order with id: {} and status: {} was saved", dto.orderId(), dto.orderHistoryStep());
 
         return orderHistory;
     }
 
-    @TransactionalEventListener(OrderStatusChangedEvent.class)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @EventListener(OrderStatusChangedEvent.class)
     public void saveOrderHistory(OrderStatusChangedEvent event) {
         log.info("Saving orderHistory for order with id: {} and status: {}", event.getOrderId(), event.getNewStatus());
 
@@ -76,17 +75,17 @@ public class OrderHistoryService {
         log.info("OrderHistory for order with id: {} and status: {} was saved", event.getOrderId(), event.getNewStatus());
     }
 
-    @Transactional
-    public void saveExecutedOrderHistory(Long orderHistoryId, ExecutedOrderHistory dto) {
-        log.info("Saving execute info of OrderHistory with id: {}", orderHistoryId);
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @TransactionalEventListener(PaymentStatusChangedEvent.class)
+    @org.springframework.core.annotation.Order(2)
+    public void saveOrderHistory(PaymentStatusChangedEvent event) {
+        log.info("Saving payment OrderHistory for order with id: {}", event.getOrderId());
 
-        OrderHistory orderHistory = getOrderHistory(orderHistoryId);
-        orderHistory.setExecutedAt(dto.getExecutedAt());
-        orderHistory.setDetails(dto.getDetails());
-        orderHistory.setPerformedBy(dto.getPerformedBy());
+        final Order order = orderRepository.findById(event.getOrderId())
+                .orElseThrow(() -> new OrderNotFoundException(event.getOrderId()));
+
+        OrderHistory orderHistory = OrderHistoryMapper.toDomain(order, event);
 
         orderHistoryRepository.save(orderHistory);
-
-        log.info("Execute info of OrderHistory with id: {} was saved", orderHistoryId);
     }
 }
