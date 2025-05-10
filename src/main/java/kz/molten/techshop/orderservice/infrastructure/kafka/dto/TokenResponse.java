@@ -1,4 +1,4 @@
-package kz.molten.techshop.orderservice.api.dto.response;
+package kz.molten.techshop.orderservice.infrastructure.kafka.dto;
 
 import jakarta.validation.constraints.NotBlank;
 

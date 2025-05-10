@@ -1,6 +1,5 @@
 package kz.molten.techshop.orderservice.infrastructure.kafka.event;
 
-import kz.molten.techshop.orderservice.domain.model.OrderStatus;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
@@ -14,7 +13,7 @@ import java.util.UUID;
 @ToString
 public class KafkaOrderEvent {
     private final Long orderId;
-    private final OrderStatus orderStatus;
+    private final String eventType;
     private final UUID eventId;
     private final Timestamp eventTimestamp;
     private final Map<String, Object> metadata;

@@ -21,4 +21,6 @@ public class KafkaConsumer {
         KafkaOrderEvent orderEvent = KafkaOrderEventMapper.toDomain(eventDTO);
         orderEventConsumer.processOrderEvent(orderEvent);
     }
+
+
 }

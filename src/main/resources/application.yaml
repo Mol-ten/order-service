@@ -1,9 +1,11 @@
 spring:
   application:
     name: order-service
+  jackson:
+    time-zone: "Asia/Almaty"
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/techshop-db
+    url: jdbc:postgresql://localhost:5432/techshop-db?serverTimezone=Asia/Almaty
     username: admin
     password: 123456
 

@@ -19,7 +19,7 @@ import java.util.Map;
 public class CatalogServiceClientImpl implements CatalogServiceClient {
 
     @Resource(name = "catalogServiceWebClient")
-    private final WebClient  catalogServiceWebClient;
+    private final WebClient catalogServiceWebClient;
 
     @Override
     public List<ProductInfo> reserveProducts(Map<Long, Integer> productsMap) {
@@ -37,6 +37,32 @@ public class CatalogServiceClientImpl implements CatalogServiceClient {
     }
 
     @Override
+    public void revertReserve(Map<Long, Integer> productsMap) {
+        log.info("Reverting products reservations from CatalogService");
+
+        catalogServiceWebClient.post()
+                .uri("catalog/product/revert-reserve")
+                .bodyValue(productsMap)
+                .retrieve()
+                .toBodilessEntity()
+                .log()
+                .block();
+    }
+
+    @Override
+    public void releaseReserve(Map<Long, Integer> productsMap) {
+        log.info("Releasing products reservations from CatalogService");
+
+        catalogServiceWebClient.post()
+                .uri("catalog/product/release-reserve")
+                .bodyValue(productsMap)
+                .retrieve()
+                .toBodilessEntity()
+                .log()
+                .block();
+    }
+
+    @Override
     public List<ProductInfo> getProducts(List<Long> productIds) {
         log.info("Fetching products with ids: {} from CatalogService", productIds);
 
@@ -49,4 +75,5 @@ public class CatalogServiceClientImpl implements CatalogServiceClient {
                 .collectList()
                 .block();
     }
+
 }
