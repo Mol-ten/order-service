@@ -1,8 +1,8 @@
 package kz.molten.techshop.orderservice.application.mapper;
 
-import kz.molten.techshop.orderservice.domain.model.OrderHistoryStep;
-import kz.molten.techshop.orderservice.domain.model.OrderStatus;
-import kz.molten.techshop.orderservice.domain.model.PaymentStatus;
+import kz.molten.techshop.orderservice.domain.model.enumeration.OrderHistoryStep;
+import kz.molten.techshop.orderservice.domain.model.enumeration.OrderStatus;
+import kz.molten.techshop.orderservice.domain.model.enumeration.PaymentStatus;
 
 import java.util.Optional;
 

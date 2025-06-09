@@ -1,5 +1,6 @@
-package kz.molten.techshop.orderservice.domain.model;
+package kz.molten.techshop.orderservice.domain.model.info;
 
+import kz.molten.techshop.orderservice.domain.model.CustomerDelivery;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
@@ -12,6 +13,6 @@ import java.time.LocalDateTime;
 public class OrderShippingInfo {
     private Long courierId;
     private String message;
-    private String address;
+    private CustomerDelivery customerDeliveryInfo;
     private LocalDateTime shippingTime;
 }

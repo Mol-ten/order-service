@@ -3,6 +3,11 @@ package kz.molten.techshop.orderservice.application.mapper;
 import kz.molten.techshop.orderservice.domain.event.OrderStatusChangedEvent;
 import kz.molten.techshop.orderservice.domain.event.OrderStatusChangedEvent.OrderStatusChangedEventBuilder;
 import kz.molten.techshop.orderservice.domain.model.*;
+import kz.molten.techshop.orderservice.domain.model.enumeration.OrderStatus;
+import kz.molten.techshop.orderservice.domain.model.info.OrderCancellationInfo;
+import kz.molten.techshop.orderservice.domain.model.info.OrderConfirmationInfo;
+import kz.molten.techshop.orderservice.domain.model.info.OrderDeliveryInfo;
+import kz.molten.techshop.orderservice.domain.model.info.OrderShippingInfo;
 
 import java.time.Instant;
 import java.util.UUID;

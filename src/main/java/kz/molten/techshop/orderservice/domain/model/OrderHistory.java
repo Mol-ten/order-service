@@ -2,6 +2,7 @@ package kz.molten.techshop.orderservice.domain.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import kz.molten.techshop.orderservice.domain.model.enumeration.OrderHistoryStep;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SourceType;

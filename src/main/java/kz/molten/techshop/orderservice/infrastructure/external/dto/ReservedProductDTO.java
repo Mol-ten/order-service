@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 public record ReservedProductDTO(
         Long productId,
-        Integer reservedQuantity,
-        BigDecimal reservedPrice
+        BigDecimal reservedPrice,
+        Integer reservedQuantity
 ) {
 }

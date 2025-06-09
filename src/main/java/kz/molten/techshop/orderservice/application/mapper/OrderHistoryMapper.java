@@ -5,7 +5,9 @@ import kz.molten.techshop.orderservice.domain.event.OrderStatusChangedEvent;
 import kz.molten.techshop.orderservice.domain.event.PaymentStatusChangedEvent;
 import kz.molten.techshop.orderservice.domain.model.Order;
 import kz.molten.techshop.orderservice.domain.model.OrderHistory;
-import kz.molten.techshop.orderservice.domain.model.OrderHistoryStep;
+import kz.molten.techshop.orderservice.domain.model.enumeration.OrderHistoryStep;
+import kz.molten.techshop.orderservice.domain.model.enumeration.PaymentStatus;
+import kz.molten.techshop.orderservice.infrastructure.kafka.event.KafkaPaymentEvent;
 
 public class OrderHistoryMapper {
 
@@ -35,16 +37,15 @@ public class OrderHistoryMapper {
                 .build();
     }
 
-    public static OrderHistory toDomain(Order order, PaymentStatusChangedEvent event) {
-        OrderHistoryStep orderHistoryStep = OrderHistoryStepMapper.mapFromPaymentStatus(event.getPaymentStatus())
-                .orElseThrow(() -> new IllegalArgumentException("Can't map %s status to OrderHistoryStep".formatted(event.getPaymentStatus())));
+    public static OrderHistory toDomain(Order order, KafkaPaymentEvent event) {
+        OrderHistoryStep orderHistoryStep = OrderHistoryStepMapper.mapFromPaymentStatus(PaymentStatus.valueOf(event.eventType()))
+                .orElseThrow(() -> new IllegalArgumentException("Can't map %s status to OrderHistoryStep".formatted(event.eventType())));
 
         return OrderHistory.builder()
                 .order(order)
                 .orderHistoryStep(orderHistoryStep)
-                .eventId(event.getEventId())
-                .executedAt(event.getTimestamp().toInstant())
-                .details(event.getDetails())
+                .eventId(event.eventId())
+                .executedAt(event.timestamp().toInstant())
                 .performedBy(3L)
                 .build();
     }

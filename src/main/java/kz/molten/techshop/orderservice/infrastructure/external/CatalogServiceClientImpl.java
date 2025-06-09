@@ -1,48 +1,41 @@
 package kz.molten.techshop.orderservice.infrastructure.external;
 
 import jakarta.annotation.Resource;
-import kz.molten.techshop.orderservice.domain.model.ProductInfo;
-import kz.molten.techshop.orderservice.infrastructure.external.dto.CatalogProductDTO;
-import kz.molten.techshop.orderservice.infrastructure.external.dto.ReservedProductDTO;
-import kz.molten.techshop.orderservice.infrastructure.external.mapper.ProductInfoMapper;
+import kz.molten.techshop.orderservice.domain.model.info.ProductReservationInfo;
+import kz.molten.techshop.orderservice.infrastructure.external.dto.ProductReservationDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.List;
-import java.util.Map;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class CatalogServiceClientImpl implements CatalogServiceClient {
+    private static final String PRODUCT_RESERVATION_URL = "catalog/product-reservation";
 
     @Resource(name = "catalogServiceWebClient")
     private final WebClient catalogServiceWebClient;
 
     @Override
-    public List<ProductInfo> reserveProducts(Map<Long, Integer> productsMap) {
+    public ProductReservationInfo reserveProducts(ProductReservationDTO reservationDTO) {
         log.info("Reserving products from CatalogService");
 
         return catalogServiceWebClient.post()
-                .uri("catalog/product/reserve")
-                .bodyValue(productsMap)
+                .uri(PRODUCT_RESERVATION_URL)
+                .bodyValue(reservationDTO)
                 .retrieve()
-                .bodyToFlux(ReservedProductDTO.class)
-                .map(ProductInfoMapper::toDomain)
+                .bodyToMono(ProductReservationInfo.class)
                 .log()
-                .collectList()
                 .block();
     }
 
     @Override
-    public void revertReserve(Map<Long, Integer> productsMap) {
+    public void revertReserve(Long orderId) {
         log.info("Reverting products reservations from CatalogService");
 
         catalogServiceWebClient.post()
-                .uri("catalog/product/revert-reserve")
-                .bodyValue(productsMap)
+                .uri(PRODUCT_RESERVATION_URL + "/" + orderId + "/revert")
                 .retrieve()
                 .toBodilessEntity()
                 .log()
@@ -50,30 +43,14 @@ public class CatalogServiceClientImpl implements CatalogServiceClient {
     }
 
     @Override
-    public void releaseReserve(Map<Long, Integer> productsMap) {
+    public void deductReserve(Long orderId) {
         log.info("Releasing products reservations from CatalogService");
 
         catalogServiceWebClient.post()
-                .uri("catalog/product/release-reserve")
-                .bodyValue(productsMap)
+                .uri(PRODUCT_RESERVATION_URL + "/" + orderId + "/deduct")
                 .retrieve()
                 .toBodilessEntity()
                 .log()
                 .block();
     }
-
-    @Override
-    public List<ProductInfo> getProducts(List<Long> productIds) {
-        log.info("Fetching products with ids: {} from CatalogService", productIds);
-
-        return catalogServiceWebClient.post()
-                .uri("catalog/product/list")
-                .bodyValue(productIds)
-                .retrieve()
-                .bodyToFlux(CatalogProductDTO.class)
-                .map(ProductInfoMapper::toDomain)
-                .collectList()
-                .block();
-    }
-
 }

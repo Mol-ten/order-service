@@ -1,8 +1,8 @@
 package kz.molten.techshop.orderservice.domain.repository;
 
 import kz.molten.techshop.orderservice.domain.model.Order;
-import kz.molten.techshop.orderservice.domain.model.OrderStatus;
-import kz.molten.techshop.orderservice.domain.model.PaymentStatus;
+import kz.molten.techshop.orderservice.domain.model.enumeration.OrderStatus;
+import kz.molten.techshop.orderservice.domain.model.enumeration.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

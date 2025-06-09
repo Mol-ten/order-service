@@ -1,16 +1,12 @@
 package kz.molten.techshop.orderservice.api.controller;
 
 import jakarta.validation.Valid;
-import kz.molten.techshop.orderservice.api.dto.request.OrderCancellationDTO;
-import kz.molten.techshop.orderservice.api.dto.request.OrderDeliveryDTO;
-import kz.molten.techshop.orderservice.api.dto.request.OrderConfirmationRequestDTO;
-import kz.molten.techshop.orderservice.api.dto.request.OrderCreateRequestDTO;
+import kz.molten.techshop.orderservice.api.dto.request.*;
 import kz.molten.techshop.orderservice.api.exception.UserInsufficientRoleException;
 import kz.molten.techshop.orderservice.application.service.OrderService;
 import kz.molten.techshop.orderservice.domain.model.Order;
-import kz.molten.techshop.orderservice.domain.model.OrderCancellationInfo;
-import kz.molten.techshop.orderservice.domain.model.OrderConfirmationInfo;
-import kz.molten.techshop.orderservice.domain.model.OrderDeliveryInfo;
+import kz.molten.techshop.orderservice.domain.model.info.OrderCancellationInfo;
+import kz.molten.techshop.orderservice.domain.model.info.OrderConfirmationInfo;
 import kz.molten.techshop.orderservice.infrastructure.kafka.dto.KafkaOrderEventDTO;
 import kz.molten.techshop.orderservice.infrastructure.kafka.producer.KafkaProducer;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Validated
@@ -43,7 +35,9 @@ public class OrderController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Order> getOrder(@PathVariable Long id) {
-        return ResponseEntity.ok(orderService.getOrderById(id));
+        Order order = orderService.getOrderById(id);
+        log.info(order.toString());
+        return ResponseEntity.ok(order);
     }
 
     @GetMapping("/by-user/{userId}")
@@ -60,7 +54,10 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<Order> createOrder(@AuthenticationPrincipal Jwt jwt, @RequestBody @Valid OrderCreateRequestDTO dto) {
         Long userId = Long.valueOf(jwt.getSubject());
-        return ResponseEntity.ok(orderService.createOrder(userId, dto));
+
+        Order order = orderService.createOrder(userId, dto);
+
+        return ResponseEntity.ok(order);
     }
 
     @PostMapping("/{orderId}/payment-complete")
@@ -98,10 +95,11 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/shipped")
-    public void shipOrder(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+    public void shipOrder(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                          @RequestBody @Valid OrderShippingDTO shippingDTO) {
         validateJwtRole(jwt, "ROLE_MANAGER");
 
-        orderService.shipOrder(id);
+        orderService.shipOrder(id, shippingDTO);
     }
 
 
@@ -109,14 +107,8 @@ public class OrderController {
     public void deliverOrder(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
                              @RequestBody @Valid OrderDeliveryDTO deliveryDTO) {
         validateJwtRole(jwt, "ROLE_MANAGER");
-
-        OrderDeliveryInfo orderDeliveryInfo = OrderDeliveryInfo.builder()
-                .customerUserId(deliveryDTO.customerUserId())
-                .courierId(deliveryDTO.courierId())
-                .deliveryDateTime(LocalDateTime.now())
-                .build();
-
-        orderService.deliverOrder(id, orderDeliveryInfo);
+        
+        orderService.deliverOrder(id, deliveryDTO);
     }
 
     @PostMapping("/{id}/cancel")

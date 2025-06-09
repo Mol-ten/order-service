@@ -1,13 +1,10 @@
 package kz.molten.techshop.orderservice.application.service;
 
 import kz.molten.techshop.orderservice.api.exception.IllegalPaymentStatusException;
-import kz.molten.techshop.orderservice.application.mapper.OrderPaymentEventMapper;
-import kz.molten.techshop.orderservice.domain.event.PaymentStatusChangedEvent;
-import kz.molten.techshop.orderservice.domain.model.PaymentStatus;
-import kz.molten.techshop.orderservice.infrastructure.kafka.event.KafkaOrderEvent;
+import kz.molten.techshop.orderservice.domain.model.enumeration.PaymentStatus;
+import kz.molten.techshop.orderservice.infrastructure.kafka.event.KafkaPaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -17,30 +14,29 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PaymentStatusEventProcessor {
     private final OrderService orderService;
-    private final ApplicationEventPublisher eventPublisher;
 
-    public void process(KafkaOrderEvent event) {
-        PaymentStatus paymentStatus = extractPaymentStatus(event.getMetadata());
-        PaymentStatusChangedEvent paymentStatusChangedEvent = OrderPaymentEventMapper
-                .toDomain(event, paymentStatus);
 
-        eventPublisher.publishEvent(paymentStatusChangedEvent);
+    public void process(KafkaPaymentEvent event) {
+        String paymentStatus = event.eventType();
 
         switch (paymentStatus) {
-            case PAYMENT_PENDING -> {}
-            case PAYMENT_COMPLETED -> handleCompleted(paymentStatusChangedEvent);
-            case PAYMENT_FAILED -> handleFailed(paymentStatusChangedEvent);
-            case PAYMENT_EXPIRED -> handleExpired(paymentStatusChangedEvent);
+            case "PAYMENT_PENDING" -> {}
+            case "PAYMENT_COMPLETED" -> handleCompleted(event);
+            case "PAYMENT_FAILED" -> handleFailed(event);
+            case "PAYMENT_EXPIRED" -> handleExpired(event);
         }
     }
 
-    private void handleCompleted(PaymentStatusChangedEvent event) {
+    private void handleCompleted(KafkaPaymentEvent event) {
+        log.info("Handling PaymentCompleted event");
+
+        orderService.setPaymentPaid(event);
     }
 
-    private void handleFailed(PaymentStatusChangedEvent event) {
+    private void handleFailed(KafkaPaymentEvent event) {
     }
 
-    private void handleExpired(PaymentStatusChangedEvent event) {
+    private void handleExpired(KafkaPaymentEvent event) {
     }
 
     private PaymentStatus extractPaymentStatus(Map<String, Object> metadata) {

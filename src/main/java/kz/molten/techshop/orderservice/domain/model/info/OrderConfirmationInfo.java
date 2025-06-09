@@ -1,4 +1,4 @@
-package kz.molten.techshop.orderservice.domain.model;
+package kz.molten.techshop.orderservice.domain.model.info;
 
 import lombok.Builder;
 import lombok.Getter;

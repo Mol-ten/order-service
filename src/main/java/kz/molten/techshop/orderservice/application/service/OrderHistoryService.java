@@ -9,6 +9,7 @@ import kz.molten.techshop.orderservice.api.exception.OrderHistoryNotFoundExcepti
 import kz.molten.techshop.orderservice.api.exception.OrderNotFoundException;
 import kz.molten.techshop.orderservice.domain.repository.OrderHistoryRepository;
 import kz.molten.techshop.orderservice.domain.repository.OrderRepository;
+import kz.molten.techshop.orderservice.infrastructure.kafka.event.KafkaPaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -78,14 +79,13 @@ public class OrderHistoryService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(PaymentStatusChangedEvent.class)
     @org.springframework.core.annotation.Order(2)
-    public void saveOrderHistory(PaymentStatusChangedEvent event) {
-        log.info("Saving payment OrderHistory for order with id: {}", event.getOrderId());
+    public void saveOrderHistory(KafkaPaymentEvent event) {
+        log.info("Saving payment OrderHistory for order with id: {}", event.orderId());
 
-        final Order order = orderRepository.findById(event.getOrderId())
-                .orElseThrow(() -> new OrderNotFoundException(event.getOrderId()));
+        final Order order = orderRepository.findById(event.orderId())
+                .orElseThrow(() -> new OrderNotFoundException(event.orderId()));
 
         OrderHistory orderHistory = OrderHistoryMapper.toDomain(order, event);
-
         orderHistoryRepository.save(orderHistory);
     }
 }

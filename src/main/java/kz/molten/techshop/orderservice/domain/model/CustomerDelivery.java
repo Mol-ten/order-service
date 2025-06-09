@@ -1,5 +1,6 @@
 package kz.molten.techshop.orderservice.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -15,10 +16,10 @@ import java.util.List;
 @Setter
 @Entity
 @Table(schema = "order_service", name = "customer_delivery_info")
-public class CustomerDeliveryInfo {
+public class CustomerDelivery {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
@@ -32,5 +33,7 @@ public class CustomerDeliveryInfo {
     private Long customerUserId;
 
     @OneToMany(mappedBy = "customerDeliveryInfo")
+    @ToString.Exclude
+    @JsonIgnore
     private List<Order> order;
 }

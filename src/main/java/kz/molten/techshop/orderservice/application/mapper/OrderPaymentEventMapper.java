@@ -1,7 +1,7 @@
 package kz.molten.techshop.orderservice.application.mapper;
 
 import kz.molten.techshop.orderservice.domain.event.PaymentStatusChangedEvent;
-import kz.molten.techshop.orderservice.domain.model.PaymentStatus;
+import kz.molten.techshop.orderservice.domain.model.enumeration.PaymentStatus;
 import kz.molten.techshop.orderservice.infrastructure.kafka.event.KafkaOrderEvent;
 
 import java.util.Map;

@@ -3,10 +3,16 @@ package kz.molten.techshop.orderservice.application.service;
 import kz.molten.techshop.orderservice.application.mapper.OrderEventMapper;
 import kz.molten.techshop.orderservice.domain.event.OrderStatusChangedEvent;
 import kz.molten.techshop.orderservice.domain.model.*;
+import kz.molten.techshop.orderservice.domain.model.info.OrderCancellationInfo;
+import kz.molten.techshop.orderservice.domain.model.info.OrderConfirmationInfo;
+import kz.molten.techshop.orderservice.domain.model.info.OrderDeliveryInfo;
+import kz.molten.techshop.orderservice.domain.model.info.OrderShippingInfo;
 import kz.molten.techshop.orderservice.infrastructure.kafka.event.KafkaOrderEvent;
 import kz.molten.techshop.orderservice.infrastructure.kafka.mapper.KafkaOrderEventMapper;
 import kz.molten.techshop.orderservice.infrastructure.kafka.producer.OrderEventPublisher;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +21,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class OrderEventDispatcher {
+    private static final Logger log = LoggerFactory.getLogger(OrderEventDispatcher.class);
     private final ApplicationEventPublisher applicationEventPublisher;
     private final OrderEventPublisher kafkaOrderEventPublisher;
 
