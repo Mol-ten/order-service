@@ -36,6 +36,7 @@ public class TokenService {
             log.info("JWT is null");
             updateJWTData(userServiceRestClient.getAccessAndRefreshToken(serviceUserUsername, serviceUserPassword));
         } else if (isExpired(token)) {
+
             updateJWTData(userServiceRestClient.refreshAccessToken(cachedRefreshToken.get()));
         }
 

@@ -1,6 +1,6 @@
 package kz.molten.techshop.orderservice.domain.event;
 
-import kz.molten.techshop.orderservice.domain.model.OrderStatus;
+import kz.molten.techshop.orderservice.domain.model.enumeration.OrderStatus;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;

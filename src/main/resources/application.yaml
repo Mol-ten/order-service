@@ -16,14 +16,6 @@ spring:
         show_sql: true
         format_sql: true
 
-  kafka:
-    producer:
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-    consumer:
-      value-deserializer: org.springframework.kafka.support.serializer.JsonSerializer
-      properties:
-        spring.json.trusted.packages: "*"
-
 logging:
   level:
     org.hibernate.engine.jdbc.spi.SqlExceptionHelper: ERROR

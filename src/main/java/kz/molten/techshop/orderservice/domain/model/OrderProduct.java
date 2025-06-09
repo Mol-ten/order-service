@@ -3,7 +3,9 @@ package kz.molten.techshop.orderservice.domain.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import kz.molten.techshop.orderservice.domain.model.info.ProductInfo;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -33,6 +35,9 @@ public class OrderProduct {
     @Column(name = "product_id")
     private Long productId;
 
+    @Column(name = "name")
+    private String name;
+
     @NotNull
     @Column(name = "quantity")
     @Min(1)
@@ -45,5 +50,14 @@ public class OrderProduct {
 
     public BigDecimal calculateTotalPrice() {
         return fixedPrice.multiply(BigDecimal.valueOf(quantity));
+    }
+
+    public void applyReservation(ProductInfo productInfo) {
+        if (!productInfo.getId().equals(this.productId)) {
+            throw new IllegalArgumentException("Mismatched productId");
+        }
+
+        this.name = productInfo.getName();
+        this.fixedPrice = productInfo.getPrice();
     }
 }

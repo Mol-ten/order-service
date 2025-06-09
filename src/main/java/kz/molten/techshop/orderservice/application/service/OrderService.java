@@ -1,31 +1,45 @@
 package kz.molten.techshop.orderservice.application.service;
 
+import kz.molten.techshop.orderservice.api.dto.request.CustomerDeliveryDTO;
 import kz.molten.techshop.orderservice.api.dto.request.OrderCreateRequestDTO;
-import kz.molten.techshop.orderservice.api.exception.IllegalOrderStatusException;
-import kz.molten.techshop.orderservice.api.exception.IllegalPaymentStatusException;
-import kz.molten.techshop.orderservice.api.exception.OrderIllegalAccessException;
+import kz.molten.techshop.orderservice.api.dto.request.OrderDeliveryDTO;
+import kz.molten.techshop.orderservice.api.dto.request.OrderShippingDTO;
 import kz.molten.techshop.orderservice.api.exception.OrderNotFoundException;
+import kz.molten.techshop.orderservice.application.mapper.OrderDeliveryInfoMapper;
 import kz.molten.techshop.orderservice.application.mapper.OrderProductMapper;
+import kz.molten.techshop.orderservice.application.mapper.OrderShippingInfoMapper;
 import kz.molten.techshop.orderservice.domain.event.PaymentStatusChangedEvent;
-import kz.molten.techshop.orderservice.domain.model.*;
+import kz.molten.techshop.orderservice.domain.model.CustomerDelivery;
+import kz.molten.techshop.orderservice.domain.model.Order;
+import kz.molten.techshop.orderservice.domain.model.OrderProduct;
+import kz.molten.techshop.orderservice.domain.model.enumeration.OrderStatus;
+import kz.molten.techshop.orderservice.domain.model.enumeration.PaymentStatus;
+import kz.molten.techshop.orderservice.domain.model.enumeration.Provider;
+import kz.molten.techshop.orderservice.domain.model.info.*;
 import kz.molten.techshop.orderservice.domain.repository.OrderRepository;
 import kz.molten.techshop.orderservice.infrastructure.external.CatalogServiceClient;
+import kz.molten.techshop.orderservice.infrastructure.external.dto.ProductReservationDTO;
+import kz.molten.techshop.orderservice.infrastructure.kafka.event.KafkaPaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.time.*;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static kz.molten.techshop.orderservice.domain.model.OrderStatus.*;
+import static kz.molten.techshop.orderservice.domain.model.enumeration.OrderStatus.CANCELLED;
 
 @Slf4j
 @Service
@@ -33,7 +47,9 @@ import static kz.molten.techshop.orderservice.domain.model.OrderStatus.*;
 public class OrderService {
     private static final Integer ORDER_EXPIRATION_HOURS = 3;
 
+    private final OrderHistoryService historyService;
     private final OrderRepository orderRepository;
+    private final CustomerDeliveryInfoService customerDeliveryInfoService;
     private final CatalogServiceClient catalogServiceClient;
     private final OrderEventDispatcher orderEventDispatcher;
 
@@ -55,19 +71,23 @@ public class OrderService {
     public Order createOrder(Long userId, OrderCreateRequestDTO dto) {
         log.info("Creating order of user with id: {}. OrderCreateRequestDTO: {}", userId, dto);
 
-        Order order = new Order();
-        order.setCustomerUserId(userId);
-        order.setOrderStatus(CREATED);
-        order.setProvider(dto.provider());
-        order.setPaymentStatus(PaymentStatus.PAYMENT_PENDING);
+        CustomerDelivery deliveryInfo = getOrCreateDeliveryInfo(userId, dto.customerDeliveryDTO());
 
-        List<OrderProduct> orderProductList = dto.products().stream()
-                .map(OrderProductMapper::fromDto)
-                .toList();
+        Order order = buildNewOrder(userId, dto, deliveryInfo);
 
-        reserveOrderProducts(orderProductList);
-        orderProductList.forEach(order::addProduct);
-        order.calculateTotalPrice();
+        orderRepository.saveAndFlush(order);
+
+        log.info("Order with id: {} was created", order.getId());
+
+        try {
+            ProductReservationInfo reservationInfo = reserveOrderProducts(order);
+            order.applyReservation(reservationInfo);
+        } catch (Exception e) {
+            cancelFailedOrder(order, e, userId);
+
+            log.warn("Failed to reserve products: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product reservation failed");
+        }
 
         orderRepository.save(order);
 
@@ -81,62 +101,39 @@ public class OrderService {
         log.info("Confirming order with id: {}", id);
 
         Order order = getOrderById(id);
-
-        if (!order.isOrderStatusEquals(CREATED)) {
-            throw new IllegalOrderStatusException("Order must be in \"CREATED\" status to confirm");
-        }
-
-        order.setOrderStatus(CONFIRMED);
-
+        order.confirm();
         orderRepository.save(order);
 
         orderEventDispatcher.publishConfirmed(order, confirmationInfo);
     }
 
     @Transactional
-    public void shipOrder(Long id) {
+    public void shipOrder(Long id, OrderShippingDTO shippingDTO) {
         log.info("Shipping order with id: {}", id);
 
         Order order = getOrderById(id);
-
-        if (!order.isOrderPaid()) {
-            throw new IllegalPaymentStatusException("PaymentStatus \"PAYMENT_COMPLETED\" is required to ship order");
-        } else if (!order.isOrderStatusEquals(CONFIRMED)) {
-            throw new IllegalOrderStatusException("OrderStatus \"CONFIRMED\" is required to ship order");
-        }
-
-
-        order.setOrderStatus(SHIPPED);
-
+        order.ship();
         orderRepository.save(order);
 
-        OrderShippingInfo shippingInfo = OrderShippingInfo.builder()
-                .address("Mock address")
-                .shippingTime(LocalDateTime.of(2025, 5, 7, 18, 0))
-                .message("Test")
-                .courierId(0L)
-                .build(); // TODO: fetch it from DB
+        CustomerDelivery deliveryInfo = order.getCustomerDeliveryInfo();
+        OrderShippingInfo shippingInfo = OrderShippingInfoMapper.toDomain(shippingDTO, deliveryInfo);
 
         orderEventDispatcher.publishShipped(order, shippingInfo);
     }
 
     @Transactional
-    public void deliverOrder(Long id, OrderDeliveryInfo deliveryInfo) {
+    public void deliverOrder(Long id, OrderDeliveryDTO deliveryDTO) {
         log.info("Setting Order with id: {} as delivered", id);
 
         Order order = getOrderById(id);
+        order.deliver();
 
-        if (!order.isOrderStatusEquals(SHIPPED)) {
-            throw new IllegalOrderStatusException("OrderStatus \"SHIPPED\" is required to ship order");
-        }
-
-        order.setOrderStatus(DELIVERED);
-
+        catalogServiceClient.deductReserve(order.getId());
         orderRepository.save(order);
 
-        catalogServiceClient.releaseReserve(order.getProductsMap());
+        OrderDeliveryInfo orderDeliveryInfo = OrderDeliveryInfoMapper.toDomain(deliveryDTO, order.getCustomerDeliveryInfo());
 
-        orderEventDispatcher.publishDelivered(order, deliveryInfo);
+        orderEventDispatcher.publishDelivered(order, orderDeliveryInfo);
     }
 
     @Transactional
@@ -144,23 +141,24 @@ public class OrderService {
         log.info("Trying to cancel order with id: {}", id);
 
         Order order = getOrderById(id);
-
-        if (!Objects.equals(order.getCustomerUserId(), cancellationInfo.getSourceUserId())
-                && !Objects.equals(cancellationInfo.getSourceUserId(), 2L)) {
-            throw new OrderIllegalAccessException("There is no order with id: %d in your list of orders".formatted(id));
-        }
-
-        if (order.isOrderPaid()) {
-            throw new IllegalPaymentStatusException("You can't cancel order that has already been paid");
-        }
-
-        order.setOrderStatus(CANCELLED);
-
+        order.cancel(cancellationInfo);
         orderRepository.save(order);
 
-        catalogServiceClient.revertReserve(order.getProductsMap());
+        catalogServiceClient.revertReserve(order.getId());
 
         orderEventDispatcher.publishCancelled(order, cancellationInfo);
+    }
+
+    @Transactional
+    public void setPaymentPaid(KafkaPaymentEvent event) {
+        log.info("Changing PaymentStatus to COMPLETED of order with id: {}", event.orderId());
+
+        Order order = getOrderById(event.orderId());
+        order.setPaymentId(event.paymentId());
+        order.setPaymentStatus(PaymentStatus.valueOf(event.eventType()));
+        orderRepository.save(order);
+
+        historyService.saveOrderHistory(event);
     }
 
     @Scheduled(cron = "0 0 * * * *")
@@ -193,26 +191,66 @@ public class OrderService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(PaymentStatusChangedEvent.class)
     @org.springframework.core.annotation.Order(1)
-    public void changePaymentStatus(PaymentStatusChangedEvent event) {
-        log.info("Changing PaymentStatus of order with id: {}", event.getOrderId());
+    public void changePaymentStatus(KafkaPaymentEvent event) {
+        log.info("Changing PaymentStatus of order with id: {}", event.orderId());
 
-        Order order = getOrderById(event.getOrderId());
-        order.setPaymentStatus(event.getPaymentStatus());
+        Order order = getOrderById(event.orderId());
+        order.setPaymentStatus(PaymentStatus.valueOf(event.eventType()));
         orderRepository.save(order);
     }
 
-    private void reserveOrderProducts(List<OrderProduct> orderProductList) {
+    @Transactional
+    public ProductReservationInfo reserveOrderProducts(Order order) {
         log.info("Reserving OrderProducts from CatalogService");
 
-        Map<Long, Integer> productsMap = orderProductList.stream()
+        Map<Long, Integer> productsMap = order.getProducts().stream()
                 .collect(Collectors.toMap(OrderProduct::getProductId, OrderProduct::getQuantity));
 
-        Map<Long, ProductInfo> productInfoMap = catalogServiceClient.reserveProducts(productsMap).stream()
-                .collect(Collectors.toMap(ProductInfo::getId, Function.identity()));
+        return catalogServiceClient.reserveProducts(ProductReservationDTO.builder()
+                .customerUserId(order.getCustomerUserId())
+                .orderId(order.getId())
+                .productsMap(productsMap)
+                .build());
+    }
 
-        for (OrderProduct orderProduct : orderProductList) {
-            ProductInfo productInfo = productInfoMap.get(orderProduct.getProductId());
-            orderProduct.setFixedPrice(productInfo.getPrice());
+    private CustomerDelivery getOrCreateDeliveryInfo(Long customerUserId, CustomerDeliveryDTO dto) {
+        CustomerDelivery deliveryInfo;
+
+        if (dto.isNewDeliveryInfo()) {
+            deliveryInfo = customerDeliveryInfoService.create(customerUserId, dto);
+        } else {
+            deliveryInfo = customerDeliveryInfoService.getByCustomerUserId(customerUserId);
         }
+
+        return deliveryInfo;
+    }
+
+    private static Order buildNewOrder(Long userId, OrderCreateRequestDTO dto,
+                                       CustomerDelivery deliveryInfo) {
+        List<OrderProduct> orderProductList = dto.products().stream()
+                .map(OrderProductMapper::fromDto)
+                .toList();
+
+        Order order = Order.builder()
+                .customerUserId(userId)
+                .customerDeliveryInfo(deliveryInfo)
+                .orderStatus(OrderStatus.CREATED)
+                .provider(Provider.STRIPE)
+                .paymentStatus(PaymentStatus.PAYMENT_PENDING)
+                .totalPrice(BigDecimal.ZERO)
+                .build();
+
+        order.addProducts(orderProductList);
+
+        return order;
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    void cancelFailedOrder(Order order, Exception e, Long userId) {
+        cancelOrder(order.getId(), OrderCancellationInfo.builder()
+                .cancellationMessage("Error during products reservation: %s".formatted(e.getMessage()))
+                .cancellationReason("RESERVATION ERROR")
+                .sourceUserId(userId)
+                .build());
     }
 }

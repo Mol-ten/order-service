@@ -1,6 +1,6 @@
 package kz.molten.techshop.orderservice.infrastructure.external.mapper;
 
-import kz.molten.techshop.orderservice.domain.model.ProductInfo;
+import kz.molten.techshop.orderservice.domain.model.info.ProductInfo;
 import kz.molten.techshop.orderservice.infrastructure.external.dto.CatalogProductDTO;
 import kz.molten.techshop.orderservice.infrastructure.external.dto.ReservedProductDTO;
 

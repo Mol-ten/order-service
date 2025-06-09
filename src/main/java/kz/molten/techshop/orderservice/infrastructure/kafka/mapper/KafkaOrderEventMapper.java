@@ -1,6 +1,10 @@
 package kz.molten.techshop.orderservice.infrastructure.kafka.mapper;
 
 import kz.molten.techshop.orderservice.domain.model.*;
+import kz.molten.techshop.orderservice.domain.model.info.OrderCancellationInfo;
+import kz.molten.techshop.orderservice.domain.model.info.OrderConfirmationInfo;
+import kz.molten.techshop.orderservice.domain.model.info.OrderDeliveryInfo;
+import kz.molten.techshop.orderservice.domain.model.info.OrderShippingInfo;
 import kz.molten.techshop.orderservice.infrastructure.kafka.dto.KafkaOrderEventDTO;
 import kz.molten.techshop.orderservice.infrastructure.kafka.event.KafkaOrderEvent;
 import kz.molten.techshop.orderservice.infrastructure.kafka.event.KafkaOrderEvent.KafkaOrderEventBuilder;
@@ -10,7 +14,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-import static kz.molten.techshop.orderservice.domain.model.OrderStatus.*;
+import static kz.molten.techshop.orderservice.domain.model.enumeration.OrderStatus.*;
 
 public class KafkaOrderEventMapper {
 
@@ -53,13 +57,15 @@ public class KafkaOrderEventMapper {
                 .metadata(Map.of(
                         "courierId", shippingInfo.getCourierId(),
                         "message", shippingInfo.getMessage(),
-                        "address", shippingInfo.getAddress(),
+                        "address", shippingInfo.getCustomerDeliveryInfo().getAddress(),
                         "shippingTime", shippingInfo.getShippingTime()
                 ))
                 .build();
     }
 
     public static KafkaOrderEvent toDeliveredEvent(Order order, UUID eventId, OrderDeliveryInfo deliveryInfo) {
+
+
         return getBaseBuilderFromOrder(order, eventId)
                 .eventType(DELIVERED.toString())
                 .metadata(Map.of(

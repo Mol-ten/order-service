@@ -1,4 +1,4 @@
-package kz.molten.techshop.orderservice.domain.model;
+package kz.molten.techshop.orderservice.domain.model.info;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -12,5 +12,6 @@ import java.math.BigDecimal;
 public class ProductInfo {
     private final Long id;
     private final BigDecimal price;
+    private final String name;
     private final Integer quantity;
 }

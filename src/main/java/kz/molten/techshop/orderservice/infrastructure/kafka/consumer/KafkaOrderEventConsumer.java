@@ -22,11 +22,6 @@ public class KafkaOrderEventConsumer implements OrderEventConsumer {
     public void processOrderEvent(KafkaOrderEvent orderEvent) {
         if (existsByEventId(orderEvent.getEventId())) {
             log.warn("Event with EventId: {} has already been processed", orderEvent.getEventId());
-            return;
-        }
-
-        if (isPaymentStatusEvent(orderEvent.getEventType())) {
-            paymentStatusEventProcessor.process(orderEvent);
         }
     }
 

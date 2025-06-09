@@ -2,7 +2,7 @@ package kz.molten.techshop.orderservice.api.dto.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import kz.molten.techshop.orderservice.domain.model.OrderHistoryStep;
+import kz.molten.techshop.orderservice.domain.model.enumeration.OrderHistoryStep;
 import lombok.Builder;
 
 import java.time.Instant;
