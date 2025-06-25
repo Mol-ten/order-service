@@ -101,6 +101,7 @@ public class OrderService {
         log.info("Confirming order with id: {}", id);
 
         Order order = getOrderById(id);
+        confirmationInfo.setCustomerUserId(order.getCustomerUserId());
         order.confirm();
         orderRepository.save(order);
 

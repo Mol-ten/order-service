@@ -21,16 +21,16 @@ logging:
     org.hibernate.engine.jdbc.spi.SqlExceptionHelper: ERROR
 
 server:
-  port: 8084
+  port: 8080
 
 techshop:
   services:
     catalog:
-      url: "http://localhost:8082/"
+      url: ${CATALOG_SERVICE_URL:"http://localhost:8082/}"
     order:
-      username: "order_service_user"
-      password: "123456"
+      username: ${CATALOG_SERVICE_USER:"order_service_user"}
+      password: ${CATALOG_SERVICE_PASSWORD:"123456"}
     user:
-      url: "http://localhost:8081/"
+      url: "${USER_SERVICE_URL:http://localhost:8081/}"
     kafka:
-      url: "localhost:9092"
+      url: ${KAFKA_URL:"localhost:9092"}

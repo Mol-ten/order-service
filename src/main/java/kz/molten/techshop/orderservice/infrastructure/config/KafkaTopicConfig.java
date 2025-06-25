@@ -10,7 +10,7 @@ public class KafkaTopicConfig {
 
     @Bean
     public NewTopic OrderStatusTopic() {
-        return TopicBuilder.name("order-status-event")
+        return TopicBuilder.name("order-status-events")
                 .partitions(1)
                 .replicas(1)
                 .build();

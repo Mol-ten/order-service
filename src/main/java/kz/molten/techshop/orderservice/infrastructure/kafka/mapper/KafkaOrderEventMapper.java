@@ -44,6 +44,7 @@ public class KafkaOrderEventMapper {
         return getBaseBuilderFromOrder(order, eventId)
                 .eventType(CONFIRMED.toString())
                 .metadata(Map.of(
+                        "customerUserId", confirmationInfo.getCustomerUserId(),
                         "managerUserId", confirmationInfo.getManagerUserId(),
                         "confirmationMessage", confirmationInfo.getConfirmationMessage(),
                         "confirmationSource", confirmationInfo.getConfirmationSource()
@@ -55,6 +56,7 @@ public class KafkaOrderEventMapper {
         return getBaseBuilderFromOrder(order, eventId)
                 .eventType(SHIPPED.toString())
                 .metadata(Map.of(
+                        "customerUserId", shippingInfo.getCustomerUserId(),
                         "courierId", shippingInfo.getCourierId(),
                         "message", shippingInfo.getMessage(),
                         "address", shippingInfo.getCustomerDeliveryInfo().getAddress(),
