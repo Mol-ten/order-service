@@ -28,8 +28,8 @@ techshop:
     catalog:
       url: ${CATALOG_SERVICE_URL:"http://localhost:8082/}"
     order:
-      username: ${CATALOG_SERVICE_USER:"order_service_user"}
-      password: ${CATALOG_SERVICE_PASSWORD:"123456"}
+      username: ${ORDER_SERVICE_USER:"order_service_user"}
+      password: ${ORDER_SERVICE_PASSWORD:"123456"}
     user:
       url: "${USER_SERVICE_URL:http://localhost:8081/}"
     kafka:
