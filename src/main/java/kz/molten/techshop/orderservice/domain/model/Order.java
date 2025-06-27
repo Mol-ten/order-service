@@ -40,7 +40,8 @@ import java.util.stream.Collectors;
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_id_gen")
+    @SequenceGenerator(name = "order_id_gen", sequenceName = "orders_id_seq")
     @Column(name = "id")
     private Long id;
 
