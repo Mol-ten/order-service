@@ -16,7 +16,7 @@ public class KafkaConsumer {
     private final OrderEventConsumer orderEventConsumer;
     private final PaymentEventConsumer paymentEventConsumer;
 
-    @KafkaListener(topics = "order-status-events", groupId = "order-group", containerFactory = "kafkaListenerContainerFactory")
+    @KafkaListener(topics = "order-status-events", groupId = "order-service-group", containerFactory = "kafkaListenerContainerFactory")
     public void listen(KafkaOrderEventDTO eventDTO) {
         log.info("New kafka message from \"order-status-events\" topic.");
 
@@ -24,7 +24,7 @@ public class KafkaConsumer {
         orderEventConsumer.processOrderEvent(orderEvent);
     }
 
-    @KafkaListener(topics = "payment-events", groupId = "payment-group", containerFactory = "kafkaPaymentListenerContainerFactory")
+    @KafkaListener(topics = "payment-events", groupId = "order-service-group", containerFactory = "kafkaPaymentListenerContainerFactory")
     public void listen(KafkaPaymentEvent paymentEvent) {
         log.info("New PaymentEvent from kafka topic");
 

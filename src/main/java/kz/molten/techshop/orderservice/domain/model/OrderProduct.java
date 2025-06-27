@@ -21,7 +21,8 @@ import java.math.BigDecimal;
 public class OrderProduct {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_product_id_gen")
+    @SequenceGenerator(name = "order_product_id_gen", sequenceName = "order_products_id_seq")
     @Column(name = "id")
     private Long id;
 

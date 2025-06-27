@@ -76,8 +76,7 @@ public class OrderHistoryService {
         log.info("OrderHistory for order with id: {} and status: {} was saved", event.getOrderId(), event.getNewStatus());
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    @TransactionalEventListener(PaymentStatusChangedEvent.class)
+    @Transactional(propagation = Propagation.REQUIRED)
     @org.springframework.core.annotation.Order(2)
     public void saveOrderHistory(KafkaPaymentEvent event) {
         log.info("Saving payment OrderHistory for order with id: {}", event.orderId());

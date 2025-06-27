@@ -1,10 +1,17 @@
 create schema if not exists order_service;
 
+create table if not exists order_service.customer_delivery_info
+(
+    id               serial primary key,
+    address          varchar not null check (length(trim(address)) > 0),
+    customer_user_id bigint  not null check (customer_user_id > 0)
+);
+
 create table if not exists order_service.orders
 (
     id                        serial primary key,
     customer_user_id          bigint    not null,
-    customer_delivery_info_id bigint references customer_delivery_info (id),
+    customer_delivery_info_id bigint references order_service.customer_delivery_info (id),
     payment_id                bigint check (payment_id > 0),
     total_price               numeric   not null,
     order_status              varchar   not null check (length(trim(order_status)) > 0),
@@ -40,12 +47,10 @@ create table if not exists order_service.order_products
     constraint uk_order_product_id_product_id unique (order_id, product_id)
 );
 
-create table if not exists order_service.customer_delivery_info
-(
-    id               serial primary key,
-    address          varchar not null check (length(trim(address)) > 0),
-    customer_user_id bigint  not null check (customer_user_id > 0)
-);
-
 create index order_customer_user_id on order_service.orders (customer_user_id);
 create index order_history_order_id on order_service.orders_history (order_id);
+
+alter sequence order_service.customer_delivery_info_id_seq restart with 1 increment 50;
+alter sequence order_service.order_products_id_seq restart with 1 increment 50;
+alter sequence order_service.orders_history_id_seq restart with 1 increment 50;
+alter sequence order_service.orders_id_seq restart with 1 increment 50;

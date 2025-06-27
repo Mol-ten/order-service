@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @ToString
 @Builder
 public class OrderShippingInfo {
+    private Long customerUserId;
     private Long courierId;
     private String message;
     private CustomerDelivery customerDeliveryInfo;
